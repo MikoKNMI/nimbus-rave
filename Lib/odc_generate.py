@@ -32,6 +32,9 @@ import _rave, _raveio
 import _pycomposite
 import compositing, tiled_compositing
 
+# Log errors to stderr (rave default is silent)
+_rave.setDebugLevel(5) # RAVE_ERROR
+
 
 ## Coordinates all data processing
 # @param options object passed directly from the parsed command-line arguments
@@ -88,6 +91,7 @@ def generate(options):
         odc_polarQC.algorithm_ids = options.qc.split(',')
         odc_polarQC.delete = options.delete
         odc_polarQC.check = options.check
+        odc_polarQC.skip_age_seconds = options.skip_age_seconds # taken from Odyssey
     
         results = odc_polarQC.multi_generate(fstrs, options.procs)
     
@@ -95,6 +99,7 @@ def generate(options):
         allreads, allvalids, allqcs, allwrites = 0.0, 0.0, 0.0, 0.0
         n = 0  # counter for number of successfully processed files
         exists = 0  # counter for files ignored, already processed
+        skipped = 0 # counter for files that are skipped, not processed; taken from Odyssey
         for result in results:
             if len(result) == 3:
                 ifstr, msg, (readt, validt, qct, writet) = result
@@ -104,6 +109,7 @@ def generate(options):
                 allwrites += writet
                 n += 1
             if result[1] == "EXISTS": exists += 1
+            elif result[1] == "SKIPPED": skipped += 1 # taken from Odyssey
     
         if not options.procs:
             options.procs = multiprocessing.cpu_count()        
@@ -116,9 +122,9 @@ def generate(options):
             writet = allwrites / totalt * 100
             runt = time.time() - start
     
-            logger.info("Processed %i of %i files in %2.1f (%2.1f) s using %i workers. Breakdown: %2.1f%% read, %2.1f%% validation, %2.1f%% QC, %2.1f%% write. Ignored %i files already processed." % (n, len(fstrs), runt, totalt, options.procs, readt, validt, qct, writet, exists))
-        elif exists:
-            logger.info("Ignored %i files already processed." % exists)
+            logger.info("Processed %i of %i files in %2.1f (%2.1f) s using %i workers. Breakdown: %2.1f%% read, %2.1f%% validation, %2.1f%% QC, %2.1f%% write. Ignored %i files already processed. Skipped %i files." % (n, len(fstrs), runt, totalt, options.procs, readt, validt, qct, writet, exists, skipped))
+        elif exists or skipped:
+            logger.info("Ignored %i files already processed. Skipped %i files. " % (exists, skipped))
         else:
             logger.info("No statistics")
 

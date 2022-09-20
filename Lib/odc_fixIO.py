@@ -29,6 +29,9 @@ import odim_source
 from rave_defines import UTF8
 from numpy import *
 
+import rave_pgf_logger
+logger = rave_pgf_logger.create_logger()
+
 
 ## Validate input file.
 # @param rio RAVE IO object read from file.
@@ -50,11 +53,26 @@ def Validate(rio):
         odim_source.CheckSource(rio.object)
         s = odim_source.ODIM_Source(rio.object.source)
         if not s.nod: raise AttributeError()
+        logger.info("Validate(rio)::s.nod={}".format(s.nod));
+        logger.info("Validate(rio)::odim_source.SOURCE={}".format(odim_source.SOURCE.keys()));
+        logger.info("Validate(rio)::odim_source.SOURCE[{}]={}".format(s.nod,odim_source.SOURCE[s.nod]));
+        #logger.info("Validate(rio)::odim_source.SOURCE['nlhrw']={}".format(odim_source.SOURCE['nlhrw']));
         if not s.wmo:
             rio.object.source = odim_source.SOURCE[s.nod].encode(UTF8)
-    except:
-        rio.object.source=repair_odim_source(rio.object)
-        s = odim_source.ODIM_Source(rio.object.source)
+    except Exception:
+        new_source = None
+        try:
+            new_source = repair_odim_source(rio.object)
+        except Exception:
+            pass
+
+        if not new_source:
+            import rave_pgf_logger
+            # This is a warning not an error because the toolbox QC will _usually_ still work in this situation, and 
+            # Odyssey compositing may ingest the data OK.
+            logger.warning("%s: unable to repair /what/source attribute (%s)" % (rio.filename, rio.object.source))
+        else:
+            rio.object.source = new_source
 
     # Third issue, not an ODIM violation as such: ODIM_BUFR returns datasets as
     # float64 arrays, which a massive waste of RAM. Harmonize to uint8.
@@ -128,12 +146,6 @@ def repair_odim_source(obj):
     # Essen
     elif obj.source == 'WMO:10412':
         return odim_source.SOURCE["deess"].encode(UTF8)
-    # KNMI:
-    elif len(source.split(";")) == 2 or source[:6] == "RAD:NL":
-        #source = re.sub(";", ",", source)  # no longer needed
-        source = re.sub("PLC", "NOD", source)
-        s = odim_source.ODIM_Source(source)
-        return odim_source.SOURCE[s.nod].encode(UTF8)
     # met.no
     elif re.search("1438", obj.source):
         return odim_source.SOURCE["nohgb"].encode(UTF8)
@@ -156,13 +168,21 @@ def repair_odim_source(obj):
 def ConvertDatasets(rio):
     obj = rio.object
     if rio.objectType == _raveio.Rave_ObjectType_SCAN:
-        dbzh = obj.getParameter("DBZH")
-        ConvertParam(dbzh)
+        if obj.hasParameter("DBZH"):
+            dbzh = obj.getParameter("DBZH")
+            ConvertParam(dbzh)
+        if obj.hasParameter("TH"):
+            th = obj.getParameter("TH")
+            ConvertParam(th)
     else:
         for i in range(obj.getNumberOfScans()):
             scan = obj.getScan(i)
-            dbzh = scan.getParameter("DBZH")
-            ConvertParam(dbzh)
+            if scan.hasParameter("DBZH"):
+                dbzh = scan.getParameter("DBZH")
+                ConvertParam(dbzh)
+            if scan.hasParameter("TH"):
+                th = scan.getParameter("TH")
+                ConvertParam(th)
 
 
 ## Converts 64-bit float to 8-bit uint, with standard scaling
@@ -181,14 +201,19 @@ def CheckScan(scan):
     if (scan.nbins * scan.rscale / 1000) < scan.rstart:
         scan.rstart /= 1000.0
     if scan.rscale < 10.0: scan.rscale *= 1000  # Idiot test
-    if scan.hasParameter("TH") and not scan.hasParameter("DBZH"):
-        dbzh = scan.getParameter("TH")
-        dbzh.quantity = "DBZH"
-        scan.removeParameter("TH")
-        scan.addParameter(dbzh)
-    else:
+#    if scan.hasParameter("TH") and not scan.hasParameter("DBZH"):
+#        dbzh = scan.getParameter("TH")
+#        dbzh.quantity = "DBZH"
+#        scan.removeParameter("TH")
+#        scan.addParameter(dbzh)
+#    else:
+#        dbzh = scan.getParameter("DBZH")
+    if scan.hasParameter("DBZH"):
         dbzh = scan.getParameter("DBZH")
-    ConvertNodataUndetect(dbzh)
+        ConvertNodataUndetect(dbzh)
+    if scan.hasParameter("TH"):
+        th = scan.getParameter("TH")
+        ConvertNodataUndetect(th)
 
 
 ## Manages the standardization of selected data and metadata attributes.

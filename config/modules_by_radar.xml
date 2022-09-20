@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<preprocessings>
+
+    <!-- By default, all the modules are used in the pre-processing -->
+    <default modules="scansun,hac-increment,ropo,beamb,satfilter,hac-filter,qi-total"></default>
+    
+    <!-- The following radars need only some modules -->
+
+    <!-- France -->
+    <fraja modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></fraja>
+    <frabb modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frabb>
+    <frbor modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frbor>
+    <frbou modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frbou>
+    <frgre modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frgre>
+    <frcae modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frcae>
+    <frnan modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frnan>
+    <frnim modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frnim>
+    <frtou modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frtou>
+    <frtra modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frtra>
+    <frtro modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frtro>
+    <frlep modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frlep>
+    <frtre modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frtre>
+    <frbol modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frbol>
+    <frpla modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frpla>
+    <fropo modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></fropo>
+    <frniz modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frniz>
+    <frcol modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frcol>
+    <frale modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frale>
+    <frmcl modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frmcl>
+    <frave modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frave>
+    <frche modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frche>
+    <frbla modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frbla>
+    <frmom modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frmom>
+    <frmtc modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frmtc>
+
+    <!-- Poland -->
+    <plleg modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plleg>
+    <plram modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plram>
+    <plpas modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plpas>
+    <plrze modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plrze>
+    <plpoz modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plpoz>
+    <plswi modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plswi>
+    <plgda modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plgda>
+    <plbrz modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plbrz>
+
+    <!-- Switzerland -->
+    <chalb modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></chalb>
+
+    <!-- Czech Republik -->
+    <czska modules="scansun,hac-increment,ropo,beamb,hac-filter,qi-total"></czska>
+    <czbrd modules="scansun,hac-increment,ropo,beamb,hac-filter,qi-total"></czbrd>
+
+    <!-- Slovenia -->
+    <silis modules="scansun,ropo,beamb,satfilter,qi-total"></silis>
+    <sipas modules="scansun,ropo,beamb,satfilter,qi-total"></sipas>
+
+</preprocessings>

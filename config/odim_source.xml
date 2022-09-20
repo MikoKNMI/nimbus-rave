@@ -10,17 +10,21 @@
   <by CCCC="UMMS" org="226">
     <bymin plc="Minsk" rad="BY40" wmo="26850"></bymin>
   </by>
-  <be CCCC="EBBR" org="227">
+  <be CCCC="EBUM" org="227">
     <bezav plc="Zaventem" rad="BX40" wmo="06451"></bezav>
     <bewid plc="Wideumont" rad="BX41" wmo="06477"></bewid>
     <bejab plc="Jabbeke" rad="BX42" wmo="06410"></bejab>
+    <behel plc="Helchteren" rad="BX43" wmo="06475"></behel>
   </be>
   <je CCCC="EGRR" org="74">
     <ukjer plc="Jersey" rad="UK52" wmo="03897"></ukjer>
   </je>
   <hr CCCC="LDZM" org="221">
-    <hrbil plc="Bilogora" rad="RH42" wmo="14256"></hrbil>
+    <hrzag plc="Puntikarka" rad="RH41" wmo="14235"></hrzag>
     <hrosi plc="Osijek" rad="RH43" wmo="14280"></hrosi>
+    <hrbil plc="Bilogora" rad="RH42" wmo="14256"></hrbil>
+    <hrgra plc="Gradište" rad="RH44" wmo="14382"></hrgra>
+    <hrdeb plc="Debeljak" rad="RH46" wmo="14000"></hrdeb>
   </hr>
   <cz CCCC="OKPR" org="89">
     <czska plc="Skalky" rad="CZ50" wmo="11718"></czska>
@@ -43,10 +47,9 @@
   </dk>
   <ee CCCC="EEMH" org="231">
     <eehar plc="Harku" rad="EE40" wmo="26038"></eehar>
-    <eesur plc="Sürgavere" rad="EE41" wmo="26232"></eesur>
+    <eesur plc="Syrgavere" rad="EE41" wmo="26232"></eesur>
   </ee>
   <fi CCCC="EFKL" org="86">
-    <fivan plc="Vantaa" rad="FI42" wmo="02975"></fivan>
     <fiika plc="Ikaalinen" rad="FI43" wmo="02941"></fiika>
     <fianj plc="Anjalankoski" rad="FI44" wmo="02954"></fianj>
     <fikuo plc="Kuopio" rad="FI45" wmo="02918"></fikuo>
@@ -56,11 +59,12 @@
     <fivim plc="Vimpeli" rad="FI49" wmo="02925"></fivim>
     <fikes plc="Kesälahti" rad="FI50" wmo="02995"></fikes>
     <fipet plc="Petäjävesi" rad="FI51" wmo="02775"></fipet>
-    <finur plc="Nurmes" rad="FI52" wmo="00000"></finur>
-    <fivih plc="Vihti" rad="FI53" wmo="00000"></fivih>
-    <fikan plc="Kankaanpää" rad="FI54" wmo="00000"></fikan>
+    <finur plc="Nurmes" rad="FI52" wigos="0-246-0-107131" wmo="00000"></finur>
+    <fivih plc="Vihti" rad="FI53" wigos="0-246-0-107275" wmo="00000"></fivih>
+    <fikan plc="Kankaanpää" rad="FI54" wigos="0-246-0-107307" wmo="00000"></fikan>
   </fi>
   <fr CCCC="LFPW" org="84">
+    <fraja plc="Ajaccio" rad="FR37" wmo="07760"></fraja>
     <frabb plc="Abbeville" rad="FR40" wmo="07005"></frabb>
     <frbor plc="Bordeaux" rad="FR41" wmo="07510"></frbor>
     <frbou plc="Bourges" rad="FR42" wmo="07255"></frbou>
@@ -87,47 +91,50 @@
     <frmtc plc="Montancy" rad="FR67" wmo="07291"></frmtc>
   </fr>
   <de CCCC="EDZW" org="78">
+    <deasb plc="Isle of Borkum" rad="DL40" wmo="10103"></deasb>
     <deemd plc="Emden" rad="DL41" wmo="10204"></deemd>
     <deham plc="Hamburg" rad="DL42" wmo="10147"></deham>
     <deboo plc="Boostedt" rad="DL42" wmo="10132"></deboo>
     <deros plc="Rostock" rad="DL43" wmo="10169"></deros>
-    <dehan plc="Hannover" rad="DL44" wmo="10338"></dehan>
     <dehnr plc="Hannover" rad="DL44" wmo="10339"></dehnr>
     <debln plc="Berlin" rad="DL45" wmo="10384"></debln>
     <depro plc="Proetzel" rad="DL45" wmo="10392"></depro>
     <deess plc="Essen" rad="DL51" wmo="10410"></deess>
     <defld plc="Flechtdorf" rad="DL52" wmo="10440"></defld>
     <deumd plc="Ummendorf" rad="DL53" wmo="10356"></deumd>
+    <deboo plc="Boostedt" rad="DL55" wmo="10132"></deboo>
     <deoft plc="Offenthal" rad="DL61" wmo="10629"></deoft>
     <deneu plc="Neuhaus" rad="DL62" wmo="10557"></deneu>
     <dedrs plc="Dresden" rad="DL63" wmo="10488"></dedrs>
+    <depro plc="Proetzel" rad="DL65" wmo="10392"></depro>
     <denhb plc="Neuheilenbach" rad="DL71" wmo="10605"></denhb>
     <detur plc="Tuerkheim" rad="DL72" wmo="10832"></detur>
     <deeis plc="Eisberg" rad="DL73" wmo="10780"></deeis>
     <deisn plc="Isen" rad="DL75" wmo="10873"></deisn>
     <defbg plc="Feldberg" rad="DL81" wmo="10908"></defbg>
     <demuc plc="Munchen" rad="DL82" wmo="10871"></demuc>
-    <desna plc="Schnaupping" rad="DL82" wmo="10873"></desna>
-    <demem plc="Memmingen" rad="DL84" wmo="10950"></demem>
+    <demem plc="Memminggen" rad="DL84" wmo="10950"></demem>
   </de>
   <gr CCCC="LGAT" org="96">
-    <grimi plc="Imittos" rad="GR41" wmo="16821"></grimi>
-    <grand plc="Andravida" rad="GR42" wmo="16682"></grand>
-    <grlar plc="Larisa" rad="GR43" wmo="16648"></grlar>
-    <grthe plc="Thessaloniki" rad="GR44" wmo="16622"></grthe>
+    <grymi plc="Ymittos" rad="GR41" wmo="16821"></grymi>
+    <grlar plc="Larisa" rad="GR42" wmo="16648"></grlar>
+    <grthe plc="Thessaloniki" rad="GR43" wmo="16622"></grthe>
+    <grand plc="Andravida" rad="GR44" wmo="16682"></grand>
     <geaig plc="Aigina" rad="GR45" wmo="16822"></geaig>
-    <grakt plc="Aktio" rad="GR46" wmo="16823"></grakt>
+    <grakt plc="Aktio" rad="GR46" wmo="16643"></grakt>
     <grxri plc="Xrisoupoli" rad="GR47" wmo="16824"></grxri>
     <grast plc="Astypalaia" rad="GR48" wmo="16825"></grast>
   </gr>
-  <hu CCCC="HABM" org="218">
+  <hu CCCC="HABP" org="218">
+    <hupog plc="Pogányvár" rad="HU41" wmo="12921"></hupog>
     <hubud plc="Budapest" rad="HU42" wmo="12843"></hubud>
     <hunap plc="Napkor" rad="HU43" wmo="12892"></hunap>
-    <hupog plc="Pogányvár" rad="HU90" wmo="12921"></hupog>
+    <husze plc="Szentes" rad="HU44" wmo="12985"></husze>
+    <huhar plc="Hármashegy" rad="HU45" wmo="12940"></huhar>
   </hu>
   <is CCCC="BIRK" org="213">
-    <iskef plc="Keflavik" rad="IL40" wmo="00000"></iskef>
-    <istgb plc="Teigsbjarg" rad="IL41" wmo="00000"></istgb>
+    <iskef plc="Keflavik" rad="IL40" wmo="04018"></iskef>
+    <isegs plc="Fljotsdalsheidi" rad="IL41" wmo="04089"></isegs>
   </is>
   <ie CCCC="EIDB" org="233">
     <iesha plc="Shannon" rad="IE40" wmo="03962"></iesha>
@@ -159,28 +166,27 @@
   </it>
   <lt CCCC="EYHM" org="238">
     <ltlau plc="Laukuva" rad="LT40" wmo="26518"></ltlau>
-    <ltvil plc="Vilnius" rad="LT41" wmo="26730"></ltvil>
+    <ltvln plc="Vilnius" rad="LT41" wmo="26730"></ltvln>
   </lt>
   <lv CCCC="EVRR" org="236">
-    <lvrix plc="Riga" rad="LV93" wmo="26422"></lvrix>
+    <lvrix plc="Riga" rad="LV40" wmo="26422"></lvrix>
   </lv>
   <nl CCCC="EHDB" org="99">
-    <nldbl plc="De Bilt" rad="NL50" wmo="06260"></nldbl>
     <nldhl plc="Den Helder" rad="NL51" wmo="06234"></nldhl>
+    <nlhrw plc="Herwijnen" rad="NL52" wmo="00000"></nlhrw>
   </nl>
   <no CCCC="ENMI" org="88">
-    <nober plc="Berlevåg" rad="NO40" wmo="01079"></nober>
-    <noosl plc="Oslo" rad="NO41" wmo="01499"></noosl>
-    <nohgb plc="Hægebostad" rad="NO42" wmo="01438"></nohgb>
-    <norsa plc="Rissa" rad="NO43" wmo="01247"></norsa>
-    <norst plc="Røst" rad="NO90" wmo="01104"></norst>
-    <nobml plc="Bømlo" rad="NO91" wmo="01405"></nobml>
-    <noand plc="Andøya" rad="NO92" wmo="01018"></noand>
-    <nohas plc="Hasvik" rad="NO93" wmo="01042"></nohas>
+    <nohgb plc="Hægebostad" rad="NO32" wmo="01438"></nohgb>
+    <nobml plc="Bømlo" rad="NO33" wmo="01405"></nobml>
+    <norsa plc="Rissa" rad="NO34" wmo="01247"></norsa>
+    <norst plc="Røst" rad="NO35" wmo="01104"></norst>
+    <noand plc="Andøya" rad="NO36" wmo="01018"></noand>
+    <nohas plc="Hasvik" rad="NO37" wmo="01042"></nohas>
     <nosta plc="Stad" rad="NO38" wmo="01206"></nosta>
     <nohur plc="Hurum" rad="NO39" wmo="01498"></nohur>
-    <nosmn plc="Sømna" rad="NO44" wmo="01136"></nosmn>
-    <nohfj plc="Hafjell" rad="NO45" wmo="01377"></nohfj>
+    <nober plc="Berlevåg" rad="NO40" wmo="01079"></nober>
+    <nosmn plc="Sømna" rad="NO41" wmo="01136"></nosmn>
+    <nohfj plc="Hafjell" rad="NO42" wmo="01377"></nohfj>
   </no>
   <pl CCCC="SOWR" org="220">
     <plleg plc="Legionowo" rad="PL41" wmo="12374"></plleg>
@@ -193,8 +199,9 @@
     <plbrz plc="Brzuchania" rad="PL48" wmo="12568"></plbrz>
   </pl>
   <pt CCCC="LPMG" org="212">
-    <ptlea plc="Cruz do Leão" rad="PO41" wmo="08550"></ptlea>
-    <ptcal plc="Cavalos do Caldeirão" rad="PO42" wmo="08553"></ptcal>
+    <ptlis plc="Cruz do Leão" rad="PO41" wmo="08550"></ptlis>
+    <ptfar plc="Cavalos do Caldeirão" rad="PO42" wmo="08553"></ptfar>
+    <ptprt plc="Arouca" rad="PO43" wmo="08556"></ptprt>
   </pt>
   <ro CCCC="YRBK" org="242">
     <robob plc="Bobohalma" rad="RD45" wmo="15166"></robob>
@@ -206,7 +213,7 @@
     <rotim plc="Timisoara" rad="RD44" wmo="15256"></rotim>
   </ro>
   <rs CCCC="LYBM" org="87">
-    <rsfru plc="Fruška gora" rad="RS41" wmo="13169"></rsfru>
+    <rsfrg plc="Fruška gora" rad="RS41" wmo="13169"></rsfrg>
     <rsbaj plc="Bajša" rad="RS42" wmo="13164"></rsbaj>
     <rssam plc="Samoš" rad="RS43" wmo="13176"></rssam>
     <rsval plc="Valjevo" rad="RS44" wmo="13270"></rsval>
@@ -235,9 +242,12 @@
   <sk CCCC="LZIB" org="217">
     <skjav plc="Maly Javornik" rad="SQ41" wmo="11812"></skjav>
     <skkoj plc="Kojsovska hola" rad="SQ51" wmo="11958"></skkoj>
+    <skkub plc="Kubinska hola" rad="SQ60" wmo="11887"></skkub>
+    <sklaz plc="Spani laz" rad="SQ70" wmo="11923"></sklaz>
   </sk>
   <si CCCC="LJLM" org="219">
     <silis plc="Lisca" rad="LJ41" wmo="14024"></silis>
+    <sipas plc="Pasja ravan" rad="LJ42" wmo="00000"></sipas>
   </si>
   <es CCCC="LEMM" org="214">
     <eslid plc="Autilla Pino" rad="SP41" wmo="08072"></eslid>
@@ -252,7 +262,7 @@
     <esbad plc="Sierra de Fuentes" rad="SP50" wmo="08262"></esbad>
     <esmal plc="Alhaurín el Grande" rad="SP51" wmo="08475"></esmal>
     <essev plc="Castillo las Guardas" rad="SP52" wmo="08386"></essev>
-    <esalm plc="Níjar" rad="SP53" wmo="8479"></esalm>
+    <esalm plc="Níjar" rad="SP53" wmo="08489"></esalm>
     <espma plc="Llucmajor" rad="SP54" wmo="08308"></espma>
     <eslpa plc="Artenara" rad="SP60" wmo="60028"></eslpa>
   </es>
@@ -263,8 +273,8 @@
     <seoer plc="Örnsköldsvik" rad="SE43" wmo="02262"></seoer>
     <sehuv plc="Hudiksvall" rad="SE44" wmo="02334"></sehuv>
     <selek plc="Leksand" rad="SE45" wmo="02430"></selek>
-    <sehem plc="Hemse (Ase)" rad="SE47" wmo="02588"></sehem>
-    <seatv plc="Åtvidaberg (Vilebo)" rad="SE48" wmo="02570"></seatv>
+    <sehem plc="Hemse" rad="SE47" wmo="02588"></sehem>
+    <seatv plc="Vilebo" rad="SE48" wmo="02570"></seatv>
     <sevax plc="Vara" rad="SE49" wmo="02600"></sevax>
     <seang plc="Ängelholm" rad="SE50" wmo="02606"></seang>
     <sekaa plc="Karlskrona" rad="SE51" wmo="02666"></sekaa>
@@ -274,6 +284,8 @@
     <chalb plc="Albis" rad="SW41" wmo="06661"></chalb>
     <chdol plc="La Dôle" rad="SW42" wmo="06699"></chdol>
     <chlem plc="Monte Lema" rad="SW43" wmo="06768"></chlem>
+    <chppm plc="Plaine Morte" rad="SW51" wmo="06726"></chppm>
+    <chwei plc="Weissfluhgipfel" rad="SW52" wmo="06776"></chwei>
   </ch>
   <uk CCCC="EGRR" org="74">
     <ukcle plc="Clee Hill" rad="UK43" wmo="03523"></ukcle>
@@ -295,4 +307,10 @@
   <eh CCCC="EUSK" org="999">
     <ehkap plc="Kapildui" rad="EH40" wmo="08082"></ehkap>
   </eh>
+  <mt CCCC="LMML" org="240">
+    <mtgud plc="Gudja" rad="ML01" wmo="16597"></mtgud>
+  </mt>
+  <il CCCC="LLBD" org="234">
+    <iltlv plc="Bet-Dagan" wmo="40179"></iltlv>
+  </il>
 </radar-db>

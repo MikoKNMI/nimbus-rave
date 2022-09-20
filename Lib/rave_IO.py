@@ -17,11 +17,14 @@
 """
 rave_IO.py - 
 """
-import os
+import os, string
+from types import IntType, LongType, FloatType
 import _pyhl
 from xml.etree.ElementTree import SubElement, ElementTree
+import rave
 import rave_info
-from H5radHelper import geth5attr, h5type
+import rave_defines
+from H5radHelper import typeconv, type_val, geth5attr, h5type
 from rave_defines import *
 
 
@@ -67,7 +70,7 @@ def open_hdf5(filename):
 
     groupmapping = {"" : h5rad}
     for nodename, node, typ in items:
-        index = nodename.rindex("/")
+        index = string.rindex(nodename, "/")
         parentname, tag = nodename[:index], nodename[index+1:]
         # Deal with (ignore) H5IM stubs
         #if tag in ["CLASS", "IMAGE_VERSION"]:
@@ -82,12 +85,12 @@ def open_hdf5(filename):
                 # convert list to string
                 nodes = []
                 for n in node.data():
-                    node = n.strip()
-                    node = remove_nulls(str(node))
+                    node = string.strip(n)
+                    node = remove_nulls(node)
                     nodes.append(("'"+node+"'"))
-                e.text = ", ".join(nodes)
+                e.text = unicode(str(string.join(nodes, ", ")), ENCODING)
             else:
-                e.text = remove_nulls(str(node.data()))
+                e.text = remove_nulls(unicode(str(node.data()), ENCODING))
             if t != "string":
                 e.attrib["type"] = t
         elif typ==2:
@@ -123,7 +126,7 @@ def get_metadata(filename):
 
     groupmapping = {"" : h5rad}
     for nodename, node, typ in items:
-        index = nodename.rindex("/")
+        index = string.rindex(nodename, "/")
         parentname, tag = nodename[:index], nodename[index+1:]
         e = SubElement(groupmapping[parentname], tag)
         if typ==1:
@@ -134,12 +137,12 @@ def get_metadata(filename):
                 # convert list to string
                 nodes = []
                 for n in node.data():
-                    node = n.strip()
-                    node = remove_nulls(str(node))
+                    node = string.strip(n)
+                    node = remove_nulls(node)
                     nodes.append(("'"+node+"'"))
-                e.text = ", ".join(nodes)
+                e.text = unicode(str(string.join(nodes, ", ")), ENCODING)
             else:
-                e.text = remove_nulls(str(node.data()))
+                e.text = remove_nulls(unicode(str(node.data()), ENCODING))
             if t != "string":
                 e.attrib["type"] = t
         # Skip typ==2, dataset array
@@ -165,7 +168,7 @@ def get_metadataRAVE(filename):
 
     groupmapping = {"" : h5rad}
     for nodename, node, typ in items:
-        index = nodename.rindex("/")
+        index = string.rindex(nodename, "/")
         parentname, tag = nodename[:index], nodename[index+1:]
         e = SubElement(groupmapping[parentname], tag)
         if typ==1:
@@ -176,12 +179,12 @@ def get_metadataRAVE(filename):
                 # convert list to string
                 nodes = []
                 for n in node.data():
-                    node = n.strip()
-                    node = remove_nulls(str(node))
+                    node = string.strip(n)
+                    node = remove_nulls(node)
                     nodes.append(("'"+node+"'"))
-                e.text = ", ".join(nodes)
+                e.text = unicode(str(string.join(nodes, ", ")), ENCODING)
             else:
-                e.text = remove_nulls(str(node.data()))
+                e.text = remove_nulls(unicode(str(node.data()), ENCODING))
             if t != "string":
                 e.attrib["type"] = t
         # Skip typ==2, dataset array
@@ -201,8 +204,8 @@ def add_H5IM_attributes(a, IDA):
 
 
 def traverse_save(e, a, ID, datadict):
-    for i in list(e):
-        if list(i):
+    for i in e.getchildren():
+        if i.getchildren():
             IDA = ID + "/"+ i.tag
             b =_pyhl.node(_pyhl.GROUP_ID, IDA)
             a.addNode(b)
@@ -230,7 +233,7 @@ def traverse_save(e, a, ID, datadict):
                 b.setArrayValue(-1, list(value.shape), value, h5typ, -1)
             elif typ == "sequence":
                 b = _pyhl.node(_pyhl.ATTRIBUTE_ID, IDA)
-                if type(value[0]) in [int, float]:
+                if type(value[0]) in [IntType, FloatType, LongType]:
                     v = []
                     for val in value:
                         v.append(str(val))
@@ -273,8 +276,8 @@ def prettyprint(element, encoding=None, indent=""):
     if isinstance(element, ElementTree):
         element = element.getroot()
     if encoding is None:
-        import locale
-        _, encoding = locale.getdefaultlocale()
+        import locale, sys
+        language, encoding = locale.getdefaultlocale()
         if not encoding or encoding == "utf":
             encoding = ENCODING
         if sys.platform == "win32" and encoding == "cp1252":
@@ -304,7 +307,7 @@ def prettyprint(element, encoding=None, indent=""):
 def Array2Tempfile(value):
     import rave_tempfile
 
-    _, fstr = rave_tempfile.mktemp()
+    sthing, fstr = rave_tempfile.mktemp()
     a = _pyhl.nodelist()
     b = _pyhl.node(_pyhl.GROUP_ID, "/dataset1")
     a.addNode(b)

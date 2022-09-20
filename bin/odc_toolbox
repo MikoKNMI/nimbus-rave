@@ -51,6 +51,9 @@ if __name__ == "__main__":
     parser.add_option("-c", "--check", action="store_true", dest="check",
                       help="Checks for the presence of output files. If an output file already exists, do nothing and move on to the next.")
 
+    parser.add_option("-s", "--skip_age_seconds", dest="skip_age_seconds", type="int", default=0,
+                      help="Skip processing of recent volumes for which WALLTIME - FILENAME_VT < skip_age_seconds.")
+
     parser.add_option("-p", "--procs", dest="procs", type="int", default=0,
                       help="Number of concurrent worker processes to run. Defaults to the maximum number of logical CPUs supported on your hardware, but can be constrained or raised as you wish. Use off-line for benchmarking.")
 

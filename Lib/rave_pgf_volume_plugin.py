@@ -40,8 +40,10 @@ import re
 import rave_pgf_quality_registry
 from rave_quality_plugin import QUALITY_CONTROL_MODE_ANALYZE_AND_APPLY
 from rave_defines import RAVE_IO_DEFAULT_VERSION
-
 from rave_defines import CENTER_ID
+
+import rave_pgf_logger
+logger = rave_pgf_logger.create_logger()
 
 ravebdb = None
 try:
@@ -120,12 +122,12 @@ def generate(files, arguments):
   
   fileno, outfile = rave_tempfile.mktemp(suffix='.h5', close="True")
   
-  if "anomaly-qc" in args.keys():
-      detectors = args["anomaly-qc"].split(",")
+  if args.has_key("anomaly-qc"):
+      detectors = string.split(args["anomaly-qc"], ",")
   else:
       detectors = []
 
-  if "qc-mode" in args.keys():
+  if args.has_key("qc-mode"):
     quality_control_mode = args["qc-mode"]
 
   volume = perform_quality_control(volume, detectors, quality_control_mode.lower())
@@ -135,7 +137,10 @@ def generate(files, arguments):
   ios.filename = outfile
   ios.version = RAVE_IO_DEFAULT_VERSION
   ios.save()
-  
+  if detectors:
+    logger.info("Generated new volume with QC applied: " + outfile)
+  else:
+    logger.info("Generated new volume: " + outfile)
   return outfile
   
   

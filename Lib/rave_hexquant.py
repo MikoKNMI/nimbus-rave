@@ -35,7 +35,7 @@ import numpy as np
 QUANTFILE = os.path.join(RAVECONFIG, "odim_quantities.xml")
 QUANTITIES = []
 initialized = 0
-bitl = list(np.zeros((128,), np.uint8))  # A 64-element long list of unsigned bytes. Used as an intermediate information holder.
+bitl = list(np.zeros((128,), np.uint8))  # A 128-element long list of unsigned bytes. Used as an intermediate information holder.
 
 use_long_type=False
 if sys.version_info < (3,):

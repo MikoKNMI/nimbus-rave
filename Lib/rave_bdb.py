@@ -106,7 +106,7 @@ class rave_bdb(object):
     '''
     if self.initialized == False:
       try:
-        if 'baltrad.bdb.server.uri' in self.config:
+        if self.config.has_key('baltrad.bdb.server.uri'):
           uri = self.config['baltrad.bdb.server.uri']
           self.database = rest.RestfulDatabase(uri, self.load_auth_provider())
           self.initialized = True

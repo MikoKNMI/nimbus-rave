@@ -103,13 +103,13 @@ def generate(files, arguments):
   comp = compositing(ravebdb)
   comp.filenames = files
   
-  if "anomaly-qc" in args.keys():
+  if args.has_key("anomaly-qc"):
     comp.detectors = args["anomaly-qc"].split(",")
 
-  if "qc-mode" in args.keys():
+  if args.has_key("qc-mode"):
     comp.set_quality_control_mode_from_string(args["qc-mode"])
 
-  if "ignore-malfunc" in args.keys():
+  if args.has_key("ignore-malfunc"):
     try:
       if args["ignore-malfunc"].lower() in ["true", "yes", "y", "1"]:
         comp.ignore_malfunc = True
@@ -117,20 +117,20 @@ def generate(files, arguments):
       pass
 
   comp.quantity = "DBZH"
-  if "quantity" in args.keys():
+  if args.has_key("quantity"):
     comp.quantity = args["quantity"]
   comp.gain = GAIN
   comp.offset = OFFSET
 
   comp.set_product_from_string("pcappi")
-  if "method" in args.keys():
+  if args.has_key("method"):
     comp.set_product_from_string(args["method"].lower())
 
   comp.height = 1000.0
   comp.elangle = 0.0
   comp.range = 200000.0
 
-  if "prodpar" in args.keys():
+  if args.has_key("prodpar"):
     comp.prodpar = args["prodpar"]
 
   if "range" in args.keys() and comp.product == _rave.Rave_ProductType_PMAX:
@@ -154,7 +154,7 @@ def generate(files, arguments):
   if "qitotal_field" in args.keys():
     comp.qitotal_field = args["qitotal_field"]
     
-  if "reprocess_qfields" in args.keys():
+  if args.has_key("reprocess_qfields"):
     comp.reprocess_quality_field = args["reprocess_qfields"]
   else:
     comp.reprocess_quality_field = RAVE_PGF_QUALITY_FIELD_REPROCESSING
@@ -173,15 +173,15 @@ def generate(files, arguments):
   #  comp.applygapfilling = True
   
   # Optional cloud-type residual non-precip filter
-  if "ctfilter" in args:
+  if args.has_key("ctfilter"):
     if eval(args["ctfilter"]):
       comp.applyctfilter = True
   
-  if "applygra" in args:
+  if args.has_key("applygra"):
     comp.applygra = True
-  if "zrA" in args:
+  if args.has_key("zrA"):
     comp.zr_A = float(args["zrA"])
-  if "zrb" in args:
+  if args.has_key("zrb"):
     comp.zr_b = float(args["zrb"])
   
   
@@ -201,7 +201,7 @@ def generate(files, arguments):
   rio.filename = outfile
   rio.version = RAVE_IO_DEFAULT_VERSION
   rio.save()
-  
+  logger.info("Generated new composite: " + outfile)
   return outfile
   
   
