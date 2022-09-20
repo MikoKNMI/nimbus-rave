@@ -141,6 +141,10 @@ def MakeCheckOfstr(ifstr):
 
 ## Delete GTS from files
 # @param ifstr string input file string
+#
+# This could handle (LPMG* files from Portugal that contain head like this:
+# PAZZ43 LPMG 271010
+# <89>HDF  .. this is normal begin of HDF file
 def delete_GTS_header(ifstr):
     fic=open(ifstr,"rb")
     # Read characters 1 to 3 of file in 'type' string
