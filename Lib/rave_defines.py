@@ -78,7 +78,8 @@ ZR_A = 200.0
 ZR_b = 1.5
 
 # Gauge adjustment - migrated from NORDRAD2
-GADJUST_STATFILE = RAVEETC + '/gadjust.stat'
+# GADJUST_STATFILE = RAVEETC + '/gadjust.stat'
+GADJUST_STATFILE = "/var/lib/baltrad/gadjust.stat"
 DEFAULTA = 0.323868068019
 DEFAULTB = -0.00107776407064
 DEFAULTC = 1.77500903316e-05
@@ -87,33 +88,43 @@ TIMELIMIT_CLIMATOLOGIC_COEFF = 48 # how many hours back in time we can use gener
 
 # SAF-NWC MSG CT filter
 CT_FTEMPLATE = "SAFNWC_MSG?_CT___%s_FES_________.h5"
+# CTPATH = ""
 CTPATH = "/opt/baltrad/MSG_CT"
 CTDELTA = datetime.timedelta(minutes=15)
 CT_MAX_DELTAS = 3  # look backwards in time for ct_max_deltas * ctdelta
 
 # Statistics
-TFILE = RAVECONFIG + "/t-critical.pickle"
-TFILE_TEMPLATE = RAVECONFIG + "/t-critical.txt"
+# TFILE = RAVECONFIG + "/t-critical.pickle"
+# TFILE_TEMPLATE = RAVECONFIG + "/t-critical.txt"
+TFILE = "/var/lib/baltrad/t-critical.pickle"
+TFILE_TEMPLATE = "/var/lib/baltrad/t-critical.txt"
 
 # Projection and area registries
 PROJECTION_REGISTRY = os.path.join(RAVECONFIG, 'projection_registry.xml')
 AREA_REGISTRY = os.path.join(RAVECONFIG, 'area_registry.xml')
 
 # XML-RPC server variables
-PIDFILE = os.path.join(RAVEETC, 'rave_pgf_server.pid')
+# PIDFILE = os.path.join(RAVEETC, 'rave_pgf_server.pid')
+PIDFILE = "/var/run/baltrad/rave_pgf_server.pid"
 PGF_HOST = 'localhost'
 PGF_PORT = 8085
 PGFs = 4
-STDOE = os.path.join(RAVEETC, 'rave_pgf_stdout_stderr.log')
+# STDOE = os.path.join(RAVEETC, 'rave_pgf_stdout_stderr.log')
+STDOE = "/var/log/baltrad/rave_pgf_stdout_stderr.log"
 
-DEX_SPOE = 'http://localhost:8084/BaltradDex'
+# DEX_SPOE = 'http://localhost:8084/BaltradDex'
+DEX_SPOE = "http://localhost:8080/BaltradDex"
 DEX_CHANNEL = 'default_products'
 DEX_USER = 'rave_pgf'
 
-DEX_NODENAME = 'localhost'
-DEX_PRIVATEKEY = None
+DEX_NODENAME = "nimbusTestNode"
+DEX_PRIVATEKEY = "/etc/baltrad/bltnode-keys/nimbusTestNode.priv"
 
-BDB_CONFIG_FILE = None
+BDB_CONFIG_FILE = "/etc/baltrad/bltnode.properties"
+
+# DEX_NODENAME = 'localhost'
+# DEX_PRIVATEKEY = None !!! DO NOT SET THIS TO None it will break like this:
+# BDB_CONFIG_FILE = None
 
 # The originating center id, used to indicate where a product has been generated.
 CENTER_ID = 'ORG:82' # Change this if your country is not Sweden.
@@ -125,9 +136,11 @@ QFILE = os.path.join(RAVEETC, 'rave_pgf_queue.xml')  # queue file
 PGF_TAG = 'bltgenerate'  # used for sending files to the DEX
 
 # Logging - little of this is relevant if SysLog is used or the OS rotates the logs.
-LOGID = 'PGF[rave.baltrad.eu]'
+# LOGID = 'PGF[rave.baltrad.eu]'
+LOGID = 'PGF[rave.nimbusTestNode]'
 LOGPORT = 8089
-LOGFILE     = os.path.join(RAVEETC, "rave_pgf.log") # Default logger is to syslog.
+# LOGFILE     = os.path.join(RAVEETC, "rave_pgf.log") # Default logger is to syslog.
+LOGFILE     = "/var/log/baltrad/rave_pgf.log" # Default logger is to syslog.
 LOGFILESIZE = 5000000  # 5 Mb each
 LOGFILES    = 5
 LOGFACILITY = "local3"

@@ -122,12 +122,12 @@ def generate(files, arguments):
   
   fileno, outfile = rave_tempfile.mktemp(suffix='.h5', close="True")
   
-  if args.has_key("anomaly-qc"):
-      detectors = string.split(args["anomaly-qc"], ",")
+  if "anomaly-qc" in args.keys():
+      detectors = args["anomaly-qc"].split(",")
   else:
       detectors = []
 
-  if args.has_key("qc-mode"):
+  if "qc-mode" in args.keys():
     quality_control_mode = args["qc-mode"]
 
   volume = perform_quality_control(volume, detectors, quality_control_mode.lower())

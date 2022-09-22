@@ -103,13 +103,13 @@ def generate(files, arguments):
   comp = compositing(ravebdb)
   comp.filenames = files
   
-  if args.has_key("anomaly-qc"):
+  if "anomaly-qc" in args.keys():
     comp.detectors = args["anomaly-qc"].split(",")
 
-  if args.has_key("qc-mode"):
+  if "qc-mode" in args.keys():
     comp.set_quality_control_mode_from_string(args["qc-mode"])
 
-  if args.has_key("ignore-malfunc"):
+  if "ignore-malfunc" in args.keys():
     try:
       if args["ignore-malfunc"].lower() in ["true", "yes", "y", "1"]:
         comp.ignore_malfunc = True
@@ -117,20 +117,20 @@ def generate(files, arguments):
       pass
 
   comp.quantity = "DBZH"
-  if args.has_key("quantity"):
+  if "quantity" in args.keys():
     comp.quantity = args["quantity"]
   comp.gain = GAIN
   comp.offset = OFFSET
 
   comp.set_product_from_string("pcappi")
-  if args.has_key("method"):
+  if "method" in args.keys():
     comp.set_product_from_string(args["method"].lower())
 
   comp.height = 1000.0
   comp.elangle = 0.0
   comp.range = 200000.0
 
-  if args.has_key("prodpar"):
+  if "prodpar" in args.keys():
     comp.prodpar = args["prodpar"]
 
   if "range" in args.keys() and comp.product == _rave.Rave_ProductType_PMAX:
@@ -154,7 +154,7 @@ def generate(files, arguments):
   if "qitotal_field" in args.keys():
     comp.qitotal_field = args["qitotal_field"]
     
-  if args.has_key("reprocess_qfields"):
+  if "reprocess_qfields" in args.keys():
     comp.reprocess_quality_field = args["reprocess_qfields"]
   else:
     comp.reprocess_quality_field = RAVE_PGF_QUALITY_FIELD_REPROCESSING
@@ -173,15 +173,15 @@ def generate(files, arguments):
   #  comp.applygapfilling = True
   
   # Optional cloud-type residual non-precip filter
-  if args.has_key("ctfilter"):
+  if "ctfilter" in args:
     if eval(args["ctfilter"]):
       comp.applyctfilter = True
   
-  if args.has_key("applygra"):
+  if "applygra" in args:
     comp.applygra = True
-  if args.has_key("zrA"):
+  if "zrA" in args:
     comp.zr_A = float(args["zrA"])
-  if args.has_key("zrb"):
+  if "zrb" in args:
     comp.zr_b = float(args["zrb"])
   
   

@@ -59,17 +59,18 @@ def init():
         for radar in list(country):
             nod = radar.tag
             CCCC[nod] = cccc
-            if radar.attrib.has_key("wmo"): 
+            keys = radar.attrib.keys()
+            if "wmo" in keys: 
                 wmo = radar.attrib["wmo"]
                 WMO[nod] = wmo
             else:
                 wmo = None
-            if radar.attrib.has_key("rad"): 
+            if "rad" in keys: 
                 rad = radar.attrib["rad"]
                 RAD[nod] = rad
             else:
                 rad = None
-            if radar.attrib.has_key("plc"): 
+            if "plc" in keys: 
                 plc = radar.attrib["plc"]
                 PLC[nod] = plc
             else:

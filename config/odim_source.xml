@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<radar-db author="Daniel Michelson">
+<radar-db author="<radar-db author="Exported-from-Opera4-Odyssey-2022-Sept">">
   <at CCCC="LOWM" org="224">
     <atrau plc="Wien/Schwechat" rad="OS41" wmo="11038"></atrau>
     <atfel plc="Salzburg/Feldkirchen" rad="OS43" wmo="11052"></atfel>
@@ -94,11 +94,9 @@
     <deasb plc="Isle of Borkum" rad="DL40" wmo="10103"></deasb>
     <deemd plc="Emden" rad="DL41" wmo="10204"></deemd>
     <deham plc="Hamburg" rad="DL42" wmo="10147"></deham>
-    <deboo plc="Boostedt" rad="DL42" wmo="10132"></deboo>
     <deros plc="Rostock" rad="DL43" wmo="10169"></deros>
     <dehnr plc="Hannover" rad="DL44" wmo="10339"></dehnr>
     <debln plc="Berlin" rad="DL45" wmo="10384"></debln>
-    <depro plc="Proetzel" rad="DL45" wmo="10392"></depro>
     <deess plc="Essen" rad="DL51" wmo="10410"></deess>
     <defld plc="Flechtdorf" rad="DL52" wmo="10440"></defld>
     <deumd plc="Ummendorf" rad="DL53" wmo="10356"></deumd>
