@@ -46,7 +46,7 @@ def strToFloat(sval):
   result = 0.0
   try:
     result = float(sval)
-  except ValueError as e:
+  except ValueError:
     result = float(int(sval))
   return result
 

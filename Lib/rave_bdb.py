@@ -30,6 +30,7 @@ import _raveio
 import rave_pgf_logger
 import rave_tempfile
 from baltrad.bdbclient import rest
+import odim_source
 
 logger = rave_pgf_logger.create_logger()
 
@@ -123,21 +124,59 @@ class rave_bdb(object):
     elements.append(uuid_str)
     return os.path.join(*elements)
 
-  def get_rave_object(self, fname, lazy_loading=False, preloadedQuantities=None):
+  def get_object_info(self, rave_obj):
+    '''
+    Creates information string for logging purposes
+    "[dt=20220127T100004,node=nlhrw]" .. if "node" /odim-source information is present
+    "[dt=20220127T100004]"            .. in other cases only (nominal) date-time
+    '''
+    if rave_obj:
+      dt = 'nodate-'; tm = '-notime'; node = ''
+      try:
+        dt = rave_obj.date
+        tm = rave_obj.time
+        node = odim_source.NODfromSource(rave_obj)
+      except:
+        pass
+      if node:
+        info_str = "[dt={}T{},node={}]".format(dt, tm, node)
+      else:
+        info_str = "[dt={}T{}]".format(dt, tm, node)
+      return info_str
+    else:
+      return ""
+
+  def get_rave_object(self, fname, lazy_loading=False, preloadedQuantities=None, extraLogContextInfo=""):
     ''' returns the rave object as defined by the fname. If the fname is an existing file on the file system, then
     the file will be opened and returned as a rave object. If no fname can be found, an atempt to fetch the file from
     bdb is made. The fetched file will be returned as a rave object on success otherwise an exception will be raised.
     :param fname: the full file path or an bdb uuid
+    :param extraLogContextInfo: extra information string for more clear logging, typically showing what has called the function get_rave_object(). For example: extraLogContextInfo="<:compositing.py [{}]:fetch_objects()".format(self.info_str)
     :return a rave object on success
     :raises an exception if the rave object not can be returned
     '''
     if os.path.exists(fname):
-      return _raveio.open(fname, lazy_loading, preloadedQuantities).object
-    
+      try:
+        rave_obj = _raveio.open(fname, lazy_loading, preloadedQuantities).object
+        info_str = self.get_object_info(rave_obj)
+        logger.info("rave_bdb.py {}{}: Using file {}".format(extraLogContextInfo, info_str, fname))
+        return rave_obj
+      except:
+        raise Exception("rave_bdb.py{}: Could not read file {}".format(extraLogContextInfo, fname))
+        #logger.error("rave_bdb.py {}{}: Could not read file {}".format(extraLogContextInfo, fname))
+        #return None
     # Fix to avoid unessecary loading if rave is running on same server as bdb which is storing files in fs.
-    if self.fs_path is not None and os.path.exists("%s"%self.path_from_uuid(fname)):
-      logger.info("Using path directly from storage %s"%self.path_from_uuid(fname))
-      return _raveio.open("%s"%self.path_from_uuid(fname), lazy_loading, preloadedQuantities).object
+    fullpath_filename = self.path_from_uuid(fname)
+    if self.fs_path is not None and os.path.exists("%s"%fullpath_filename):
+      try:
+        rave_obj = _raveio.open("%s"%fullpath_filename, lazy_loading, preloadedQuantities).object
+        info_str = self.get_object_info(rave_obj)
+        logger.info("rave_bdb.py {}{}: Using file {}".format(extraLogContextInfo, info_str, fullpath_filename))
+        return rave_obj
+      except:
+        raise Exception("rave_bdb.py{}: Could not read file {}".format(extraLogContextInfo, fname))
+        #logger.error("rave_bdb.py {}{}: Could not read file {}".format(extraLogContextInfo, fname))
+        #return None
 
     content = self.get_database().get_file_content(fname)
     if content:
@@ -148,11 +187,15 @@ class rave_bdb(object):
             shutil.copyfileobj(content, outf)
             outf.flush()
             outf.close()
-        return _raveio.open(tmppath).object # We cant perform lazy loading if we remove the file...
+        try:
+          rave_obj =_raveio.open(tmppath).object # We cant perform lazy loading if we remove the file...
+          return rave_obj
+        except:
+          raise Exception("rave_bdb.py{}: Could not read file {}; tmppath={}".format(extraLogContextInfo, fname, tmppath))
       finally:
         os.unlink(tmppath)
     else:
-      raise Exception("No content for file %s"%fname)
+      raise Exception("rave_bdb.py{}: No content for file {}".format(extraLogContextInfo, fname))
 
   def get_file(self, uuid):
     ''' returns a file name to a file that can be accessed. The uuid should be an
@@ -186,7 +229,7 @@ class rave_bdb(object):
           os.unlink(tmppath)
         raise e
     else:
-      raise Exception("No content for file %s"%uuid)
+      raise Exception("rave_bdb.py: No content for file %s"%uuid)
 
 if __name__=='__main__':
   dbapi = rave_bdb()

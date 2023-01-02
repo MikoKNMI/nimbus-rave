@@ -28,11 +28,15 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 ## @file
 ## @author Anders Henja, SMHI
 ## @date 2010-10-15
+## @author Michal Koutek, KNMI (Fixes needed for OPERA NIMBUS)
+## @date 2022-01-06
+
 import string
 import rave_tempfile
 import rave_pgf_logger
 import _raveio
 import rave_tile_registry
+import os
 
 from tiled_compositing import tiled_compositing
 from compositing import compositing
@@ -148,7 +152,7 @@ def generate(files, arguments):
       else:
         # interpolation for other quantities than DBZH has not been tested, therefore not yet considered 
         # supported. Should in theory work, but the setting of minvalue must be adjusted for the quantity
-        logger.info("Interpolation method %s is currently only supported for quantity DBZH. Provided quantity: %s. No composite generated." % (interpolation_method, comp.quantity))
+        logger.info("rave_pgf_composite_plugin.py:generate(): Interpolation method %s is currently only supported for quantity DBZH. Provided quantity: %s. No composite generated." % (interpolation_method, comp.quantity))
         return None
   
   if "qitotal_field" in args.keys():
@@ -186,14 +190,74 @@ def generate(files, arguments):
   
   
   if rave_tile_registry.has_tiled_area(args["area"]):
+    # NOTE: The "comp object" has been instantiated first as: comp = compositing(ravebdb)
     comp = tiled_compositing(comp)
   
   result = comp.generate(args["date"], args["time"], args["area"])
-  
+
+  try:
+    area_id = args["area"]
+  except:
+    area_id = 'None'
+  try:
+    dt_str = "{}T{}".format(args["date"], args["time"])
+  except:
+    dt_str = "_dt_unset_"
+  info_str = "dt={},area={}".format(dt_str,area_id)
+
   if result == None:
-    logger.info("No composite could be generated.")
+    logger.warning("rave_pgf_composite_plugin.py [{}]:generate(): No composite could be generated.".format(info_str))
     return None
   
+  if os.getenv('BLT_RAVE_NIMBUS')=='1':
+    # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+    # For testing activate by: export BLT_RAVE_NIMBUS_DEV_TEST_LOGGING=1
+    BALTRAD_DEV_TEST_LOGGING = (os.getenv('BLT_RAVE_NIMBUS_DEV_TEST_LOGGING')=='1')
+    #BALTRAD_DEV_TEST_LOGGING = True  # Activated only for testing
+    '''
+    BALTRAD DEX: Detect FULLY nimbus-qc composites:
+    { "type": "attr", "valueType": "STRING", "negated": true,"operator": "LIKE",
+      "attribute": "how/task", "value": "nimbus-qc-satfilter,*"},
+    { "type": "attr", "valueType": "STRING", "negated": false,"operator": "LIKE",
+      "attribute": "how/task", "value": "nimbus-qc,*"},
+    - or -
+    BALTRAD DEX: Detect nimbus-qc composites (explicitely) WITHOUT satfilter:
+    { "type": "attr", "valueType": "STRING", "negated": false,"operator": "LIKE",
+      "attribute": "how/task", "value": "nimbus-qc-no-satfilter*"},
+    '''
+    if comp.nimbusQc_detected:
+      if BALTRAD_DEV_TEST_LOGGING:
+        logger.debug("rave_pgf_composite_plugin.py [{}]:generate(): Detected NIMBUS_QC files used for this composite; whichNimbus_qc='{}'".format(info_str, comp.whichNimbus_qc))
+        try:
+          logger.debug("rave_pgf_composite_plugin.py [{}]:generate(): (tiled-)compositing.whichNimbus_qc ='{}')".format(info_str, comp.whichNimbus_qc))
+          logger.debug("rave_pgf_composite_plugin.py [{}]:generate(): (tiled-)compositing.nimbusQc_short_tasks_str ='{}')".format(info_str, comp.nimbusQc_short_tasks_str))
+          logger.debug("rave_pgf_composite_plugin.py [{}]:generate(): (tiled-)compositing.nimbusQc_satfilter_file ='{}')".format(info_str, comp.nimbusQc_satfilter_file))
+          #logger.debug("rave_pgf_composite_plugin.py [{}]:generate(): (tiled-)compositing.nimbusQc_tasks_str ='{}')".format(info_str, comp.nimbusQc_tasks_str))
+          #logger.debug("rave_pgf_composite_plugin.py [{}]:generate(): result.getAttribute('how/task') ='{}')".format(info_str, how_task_value0))
+          # Note: comp.how_tasks == '' (empty) therefore not usable.
+          # - or - when satfilter active
+        except:
+          pass
+      
+      try:
+        nodes_attr = result.getAttribute('how/nodes')
+      except:
+        nodes_attr = "-empty/missing-"
+      logger.info("rave_pgf_composite_plugin.py [{}]:generate(): getAttribute('how/nodes') = '{}'".format(info_str, nodes_attr))
+
+      how_tasks = "{},{}".format(comp.whichNimbus_qc,comp.nimbusQc_short_tasks_str)
+      if how_tasks != "":
+        result.addAttribute('how/task', how_tasks)
+        logger.info("rave_pgf_composite_plugin.py [{}]:generate(): addAttribute('how/task', '{}')".format(info_str, how_tasks))
+
+      if comp.nimbusQc_satfilter_file !="":
+        how_task_args_value = "satfilter_file:{};{}".format(comp.nimbusQc_satfilter_file, comp.nimbusQc_dict_qc_nodes_str)
+      else:
+        how_task_args_value = "{}".format(comp.nimbusQc_dict_qc_nodes_str)
+      if how_task_args_value != "":
+          result.addAttribute('how/task_args', how_task_args_value)
+          logger.info("rave_pgf_composite_plugin.py [{}]:generate(): addAttribute('how/task_args', '{}')".format(info_str, how_task_args_value))
+
   _, outfile = rave_tempfile.mktemp(suffix='.h5', close="True")
   
   rio = _raveio.new()
@@ -201,7 +265,7 @@ def generate(files, arguments):
   rio.filename = outfile
   rio.version = RAVE_IO_DEFAULT_VERSION
   rio.save()
-  logger.info("Generated new composite: " + outfile)
+  logger.info("rave_pgf_composite_plugin.py [{}]:generate(): Generated new composite: {} ".format(info_str, outfile))
   return outfile
   
   

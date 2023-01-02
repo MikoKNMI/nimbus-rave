@@ -33,6 +33,10 @@
     <frmom modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frmom>
     <frmtc modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></frmtc>
 
+    <!-- Netherlands -->
+    <nlhrw modules="scansun,ropo,beamb,qi-total,satfilter"></nlhrw>
+    <nldhl modules="scansun,ropo,beamb,qi-total,satfilter"></nldhl>
+
     <!-- Poland -->
     <plleg modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plleg>
     <plram modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plram>
@@ -42,6 +46,23 @@
     <plswi modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plswi>
     <plgda modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plgda>
     <plbrz modules="scansun,hac-increment,ropo,hac-filter,qi-total"></plbrz>
+
+    <!-- Spain: runtime / data issues with beamb, therefore disabled -->
+    <esalm modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></esalm>
+    <esbad modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></esbad>
+    <esbar modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></esbar>
+    <escor modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></escor>
+    <eslid modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></eslid>
+    <eslpa modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></eslpa>
+    <esmad modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></esmad>
+    <esmal modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></esmal>
+    <esmur modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></esmur>
+    <espma modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></espma>
+    <essan modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></essan>
+    <essev modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></essev>
+    <essse modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></essse>
+    <esval modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></esval>
+    <eszar modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></eszar>
 
     <!-- Switzerland -->
     <chalb modules="scansun,hac-increment,ropo,satfilter,hac-filter,qi-total"></chalb>

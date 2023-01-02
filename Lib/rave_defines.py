@@ -24,11 +24,13 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 ## @date 2011-06-27
 
 import sys, os, datetime
-import rave_defines
+import rave_defines   # (!+1)
+# BALTRAD TBD: ^ This self(-cyclic) module import should be resolved in a better way. See (!+1) and # (!+2)
+# Module importing itself may lead to errors as the module may be in an incomplete state when imported by itself.
 
 ## PATHS
 #
-RAVEROOT = os.path.split(os.path.split(rave_defines.__file__)[0])[0]
+RAVEROOT = os.path.split(os.path.split(rave_defines.__file__)[0])[0] # (!+2)
 if not RAVEROOT: RAVEROOT = '..'
 RAVELIB =  RAVEROOT + '/Lib'
 RAVECONFIG = RAVEROOT + '/config'

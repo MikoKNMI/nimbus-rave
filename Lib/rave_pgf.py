@@ -45,6 +45,8 @@ else:
   
 from rave_defines import DEX_SPOE, REGFILE, PGFs, LOGID, LOGLEVEL, PGF_HOST, PGF_PORT
 
+import json
+
 METHODS = {'generate' :  '("algorithm",[files],[arguments])',
            'get_quality_controls' : '',
            'get_areas' : '',
@@ -250,7 +252,7 @@ class RavePGF():
       self.logger.info("%s: ID=%s Dispatching request for %s" % (self.name, jobid, algorithm))
       self.runner.add(generate, jobid, algorithm, files, arguments, self.job_done)
       #result = self.pool.apply_async(generate, (jobid, algorithm, files, arguments))
-    except Exception as e:
+    except Exception:
       #err_msg = traceback.format_exc()
       #self.logger.error("%s: ID=%s failed. Check this out:\n%s" % (self.name, jobid, err_msg))
       self.logger.exception("%s: ID=%s failed. Check this out:" % (self.name, jobid))
@@ -268,7 +270,7 @@ class RavePGF():
       names = rave_pgf_quality_registry.get_plugins()
       for n in names:
         result.append((n, "%s quality control"%n))
-    except Exception as e:
+    except Exception:
       self.logger.exception("Failed to get quality controls")
     return result
 
@@ -284,7 +286,7 @@ class RavePGF():
       for k in keys:
         a = reg.getarea(k)
         result[k] = {"id":a.id, "xsize":a.xsize, "ysize":a.ysize, "xscale":a.xscale, "yscale":a.yscale, "extent":a.extent, "pcs":a.projection.definition}
-    except Exception as e:
+    except Exception:
       self.logger.exception("Failed to get areas")
 
     return result
@@ -298,7 +300,7 @@ class RavePGF():
       items = rave_projection.items()
       for item in items:
         result[item[0]] = {"id":item[0], "description":item[1].name, "definition":" ".join(item[1].definition)}
-    except Exception as e:
+    except Exception:
       self.logger.exception("Failed to get pcs definitions")
 
     return result 
@@ -313,7 +315,8 @@ class RavePGF():
   # be parsed into their corrects formats, ie. int, float, list, etc.
   # @return string either "OK" or an error with a corresponding Traceback
   def _generate(self, algorithm, files, arguments):
-    import rave_pgf_verify, rave_pgf_protocol
+    import rave_pgf_protocol
+    import rave_pgf_verify
     err_msg = None
 
     algorithm = algorithm.lower()
@@ -347,11 +350,23 @@ class RavePGF():
       
       # Inject the result if it is a file
       if outfile != None:
-        BaltradFrame.inject_file(outfile, DEX_SPOE)
+        try:
+          httpStatus, httpMessage, jsonBody = BaltradFrame.inject_file(outfile, DEX_SPOE)
+          message = ""
+          if httpStatus == 200:
+              uuid = json.loads(jsonBody)["uuid"]
+              self.logger.info("rave_pfg::inject_file({}):httpStatus={}; httpMessage={}; uuid={}".format(outfile, httpStatus, httpMessage, uuid))
+              file_ingested = True
+          else:
+              uuid=""
+              message = json.loads(jsonBody)["message"]
+              self.logger.info("rave_pfg::inject_file({}):httpStatus={}; httpMessage={}; message={}".format(outfile, httpStatus, httpMessage, message))
+        except Exception as e:
+            self.logger.error("Failed to inject %s. Error message: %s" % (outfile, e))
         # Log the result
-        self.logger.debug("%s: ID=%s Injected %s" % (self.name, self._jobid, outfile))
+        self.logger.debug("%s: ID=%s Injected %s ; uuid=%s" % (self.name, self._jobid, outfile, uuid))
         
-    except Exception as err:
+    except Exception:
       # the 'err' itself is pretty useless
       #err_msg = traceback.format_exc()
       #self.logger.error("%s: ID=%s failed. Check this out:\n%s" % (self.name, self._jobid, err_msg))
@@ -361,7 +376,8 @@ class RavePGF():
       if os.path.isfile(outfile): os.remove(outfile)
     
     if err_msg != None:
-      self.logger.debug("%s: ID=%s Returning: %s" % (self.name, self._jobid, err_msg))
+      # TBD: err_msg is NOT set in this function. Exception handling inconsitent.
+      self.logger.warning("%s: ID=%s Returning: %s" % (self.name, self._jobid, err_msg))
       return err_msg
     self.logger.debug("%s: ID=%s Returning: OK" % (self.name, self._jobid))
     return "OK"
@@ -391,7 +407,7 @@ class RavePGF():
       code = subprocess.call(cmd, shell=True)
       if code != 0:
         raise Exception("Failure when executing %s" % command)
-    except Exception as err:
+    except Exception:
       #err_msg = traceback.format_exc()
       #self.logger.error("%s: Failed to execute command %s, msg: %s" % (self.name, command, err_msg))
       self.logger.exception("%s: Failed to execute command %s, msg:" % (self.name, command))

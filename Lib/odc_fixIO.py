@@ -53,12 +53,16 @@ def Validate(rio):
         odim_source.CheckSource(rio.object)
         s = odim_source.ODIM_Source(rio.object.source)
         if not s.nod: raise AttributeError()
-        logger.info("Validate(rio)::s.nod={}".format(s.nod));
-        logger.info("Validate(rio)::odim_source.SOURCE={}".format(odim_source.SOURCE.keys()));
-        logger.info("Validate(rio)::odim_source.SOURCE[{}]={}".format(s.nod,odim_source.SOURCE[s.nod]));
-        #logger.info("Validate(rio)::odim_source.SOURCE['nlhrw']={}".format(odim_source.SOURCE['nlhrw']));
+        logger.debug("Validate(rio)::s.nod={}".format(s.nod))
+        logger.debug("Validate(rio)::odim_source.SOURCE[{}]={}; type={}".format(s.nod,odim_source.SOURCE[s.nod], type(odim_source.SOURCE[s.nod])))
         if not s.wmo:
-            rio.object.source = odim_source.SOURCE[s.nod].encode(UTF8)
+            try:
+                s_nod_src = odim_source.SOURCE[s.nod]
+                logger.debug("Validate(rio)::s_nod_src={}; type={}".format(s.nod,type(s_nod_src)))
+                source_utf8 = s_nod_src.encode(UTF8)
+                rio.object.source = source_utf8
+            except:
+                rio.object.source = "{}".format(source_utf8)
     except Exception:
         new_source = None
         try:
@@ -161,6 +165,9 @@ def repair_odim_source(obj):
     # Iceland
     elif obj.source == "WMO:0,PLC:Teigsbjarg":
         return odim_source.SOURCE["istgb"].encode(UTF8)
+    # Default return value (There is a try + except around this function call. See: Lib/odc_fixIO.py)
+    s = odim_source.ODIM_Source(source)
+    return odim_source.SOURCE[s.nod].encode(UTF8)    
 
 
 ## Manages the conversion of datasets from float64 to uint8.

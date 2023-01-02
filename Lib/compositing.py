@@ -22,6 +22,9 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 ## @file
 ## @author Anders Henja and Daniel Michelson, SMHI
 ## @date 2014-08-12
+## @author Michal Koutek, KNMI (Fixes needed for OPERA NIMBUS)
+## @date 2022-01-06
+
 import os  # Provisional, until compositing can handle prefab QC
 import re
 import sys
@@ -48,6 +51,7 @@ import rave_util
 import area_registry
 import rave_area
 import odim_source
+from inspect import signature
 import rave_projection
 import rave_quality_plugin
 from rave_quality_plugin import QUALITY_CONTROL_MODE_ANALYZE, QUALITY_CONTROL_MODE_ANALYZE_AND_APPLY   
@@ -122,7 +126,25 @@ class compositing(object):
     self.radar_index_mapping = {}
     self.use_lazy_loading=True
     self.use_lazy_loading_preloads=True
-    
+    self.area_id = 'None'
+    self.dt_str = "_dt_unset_"
+    self.BALTRAD_DEV_TEST_LOGGING = False  # Disabled during production
+    if os.getenv('BLT_RAVE_NIMBUS')=='1':
+      # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+      # For testing activate by: export BLT_RAVE_NIMBUS_DEV_TEST_LOGGING=1
+      self.BALTRAD_DEV_TEST_LOGGING = (os.getenv('BLT_RAVE_NIMBUS_DEV_TEST_LOGGING')=='1') 
+      #self.BALTRAD_DEV_TEST_LOGGING = True  # Activated only for testing
+      self.nimbusQc_detected = False
+      self.whichNimbus_qc = ""
+      self.nimbusQc_short_tasks_str = ""
+      self.nimbusQc_tasks_main = []
+      self.nimbusQc_dict_qc_nodes = {}
+      self.nimbusQc_dict_qc_nodes_str = ""
+      self.nimbusQc_satfilter_file = ""
+      self.nimbusQc_tasks = []
+      self.nimbusQc_tasks_str = "" # unused
+      # self.nimbusQc_tasks_str = ','.join(self.nimbusQc_tasks)
+
   def generate(self, dd, dt, area=None):
     return self._generate(dd, dt, area)
 
@@ -184,6 +206,22 @@ class compositing(object):
       idx = idx + 1
     return idx
 
+  def store_dt_area_info(self,dd, dt, area):
+    if area:
+      try:
+        self.area_id = area.id  # AreaCore object
+      except:
+        self.area_id = area    # string object
+    else:
+      self.area_id = 'None'
+    try:
+      if "tiled area subset " in self.area_id:
+        self.area_id = (self.area_id[:]).split("tiled area subset ")[1]
+    except:
+      pass
+    self.dt_str = "{}T{}".format(dd, dt)
+    self.info_str = "dt={},area={}".format(self.dt_str,self.area_id)
+
   ## Generates the cartesian image.
   #
   # @param dd: date in format YYYYmmdd
@@ -191,25 +229,30 @@ class compositing(object):
   # @param area: the area to use for the cartesian image. If none is specified, a best fit will be atempted.  
   def _generate(self, dd, dt, area=None):
     self._debug_generate_info(area)
- 
+    
+    self.store_dt_area_info(dd, dt, area)
     if self.verbose:
-      self.logger.info("Fetching objects and applying quality plugins")
-    
-    self.logger.debug("Generating composite with date and time %sT%s for area %s", dd, dt, area)
-    
+      self.logger.debug("compositing.py [%s]:_generate(): Generating composite", self.info_str)
+      self.logger.debug("compositing.py [%s]:_generate(): Fetching objects and applying quality plugins", self.info_str)
+
     objects, nodes, how_tasks, all_files_malfunc = self.fetch_objects()
-    
-    if all_files_malfunc:
-      self.logger.info("Content of all provided files were marked as 'malfunc'. Since option 'ignore_malfunc' is set, no composite is generated!")
-      return None
-    
-    objects, algorithm, qfields = self.quality_control_objects(objects)
-    
-    self.logger.debug("Quality controls for composite generation: %s", (",".join(qfields)))
-    
+
     if len(objects) == 0:
-      self.logger.info("No objects provided to the composite generator. No composite will be generated!")
+      self.logger.debug("compositing.py [%s]:_generate(): No objects provided to the composite generator. No composite generated!", self.info_str)
       return None
+
+    if all_files_malfunc:
+      self.logger.debug("compositing.py [%s]:_generate(): Content of all provided files were marked as 'malfunc'. Since option 'ignore_malfunc' is set, no composite is generated!", self.info_str)
+      return None
+    
+    self.logger.info("compositing.py [%s]:_generate(): Processing Quality Controls for composite generation; area=%s", self.info_str, self.area_id)
+    objects, algorithm, qfields = self.quality_control_objects(objects)
+
+    if len(objects) == 0:
+      self.logger.debug("compositing.py [%s]:_generate(): No objects provided to the composite generator. No composite generated!", self.info_str)
+      return None
+
+    self.logger.info("compositing.py [%s]:_generate(): Finished Quality Controls for composite generation: [%s]", self.info_str, (",".join(qfields)))
 
     objects=list(objects.values())
 
@@ -224,7 +267,7 @@ class compositing(object):
         pyarea = my_area_registry.getarea(area)
     else:
       if self.verbose:
-        self.logger.info("Determining best fit for area")
+        self.logger.info("compositing.py [%s]:_generate(): Determining best fit for area", self.info_str)
       A = rave_area.MakeAreaFromPolarObjects(objects, self.pcsid, self.xscale, self.yscale)
 
       pyarea = _area.new()
@@ -285,7 +328,7 @@ class compositing(object):
       self._update_generator_with_prodpar(generator)
     
     if self.verbose:
-      self.logger.info("Generating cartesian composite")
+      self.logger.info("compositing.py [%s]:_generate(): Generating cartesian composite", self.info_str)
     
     generator.applyRadarIndexMapping(self.radar_index_mapping)
     
@@ -298,15 +341,15 @@ class compositing(object):
     
     if self.applygra:
       if not "se.smhi.composite.distance.radar" in qfields:
-        self.logger.info("Trying to apply GRA analysis without specifying a quality plugin specifying the se.smhi.composite.distance.radar q-field, disabling...")
+        self.logger.info("compositing.py [%s]:_generate(): Trying to apply GRA analysis without specifying a quality plugin specifying the se.smhi.composite.distance.radar q-field, disabling...", self.info_str)
       else:
         if self.verbose:
-          self.logger.info("Applying GRA analysis (ZR A = %f, ZR b = %f)"%(self.zr_A, self.zr_b))
+          self.logger.info("compositing.py [%s]:_generate(): Applying GRA analysis (ZR A = %f, ZR b = %f)"%(self.info_str, self.zr_A, self.zr_b))
         grafield = self._apply_gra(result, dd, dt)
         if grafield:
           result.addParameter(grafield)
         else:
-          self.logger.warn("Failed to generate gra field....")
+          self.logger.warning("compositing.py [%s]:_generate(): Failed to generate gra field....", self.info_str)
     
     # Hack to create a BRDR field if the qfields contains se.smhi.composite.index.radar
     if "se.smhi.composite.index.radar" in qfields:
@@ -317,7 +360,7 @@ class compositing(object):
       
     if self.applygapfilling:
       if self.verbose:
-        self.logger.debug("Applying gap filling")
+        self.logger.debug("compositing.py [%s]:_generate(): Applying gap filling", self.info_str)
       t = _transform.new()
       gap_filled = t.fillGap(result)
       result.getParameter(self.quantity).setData(gap_filled.getParameter(self.quantity).getData())
@@ -335,13 +378,14 @@ class compositing(object):
         else:
           result.source="%s,CMT:%s"%(self.remove_CMT_from_source(result.source), plc)
       except:
-        self.logger.exception("Failed to get source from object")
-        
-    if how_tasks != "":
-      result.addAttribute('how/task', how_tasks)
+        self.logger.exception("compositing.py [%s]:_generate(): Failed to get source from object", self.info_str)
+
+    if os.getenv('BLT_RAVE_NIMBUS')=='1':
+      # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+      self.store_nimbus_qc_to_composite(result, how_tasks)
 
     if self.verbose:
-      self.logger.debug("Returning resulting composite image")
+      self.logger.debug("compositing.py [%s]:_generate(): Returning resulting composite image", self.info_str)
 
     return result
 
@@ -403,7 +447,18 @@ class compositing(object):
       for d in self.detectors:
         p = rave_pgf_quality_registry.get_plugin(d)
         if p != None:
-          process_result = p.process(obj, self.reprocess_quality_field, self.quality_control_mode)
+          # Before calling p.process(...) CHECK if the qc_plugin.process function has attribute "arguments" in definition.
+          # "arguments" .. can be used to pass additional (logging) information into the process function.
+          plugin_process_funct_sign = "{}".format(signature(p.process))
+          # (self, obj, reprocess_quality_flag=True, quality_control_mode='analyze_and_apply', arguments=None)"
+          if "arguments" not in plugin_process_funct_sign:
+            logger.debug("compositing.py [{}]: Processing volume with quality plugin {}.".format(self.info_str, d))
+            process_result = p.process(obj, self.reprocess_quality_field, self.quality_control_mode)
+          else:
+            arguments = {"info_str":self.info_str[:]}
+            logger.debug("compositing.py [{}]: Processing volume with quality plugin {}.".format(self.info_str, d))
+            #logger.debug("compositing.py [{}]: Processing volume with quality plugin {} with arguments={}.".format(self.info_str, d, arguments))
+            process_result = p.process(obj, self.reprocess_quality_field, self.quality_control_mode, arguments)
           if isinstance(process_result, tuple):
             obj = process_result[0]
             detector_qfields = process_result[1]
@@ -422,6 +477,10 @@ class compositing(object):
             algorithm = na
 
       result[k] = obj
+
+    if os.getenv('BLT_RAVE_NIMBUS')=='1':
+      # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+      self.eval_nimbus_qc_pvols_in_comp(result)
 
     return result, algorithm, qfields
   
@@ -443,11 +502,13 @@ class compositing(object):
       obj = None
       try:
         if self.ravebdb != None:
-          obj = self.ravebdb.get_rave_object(fname, self.use_lazy_loading, preload_quantity)
+          #self.logger.debug("compositing.py [%s]:fetch_objects(): get_rave_object(file = %s)", self.info_str, fname)
+          obj = self.ravebdb.get_rave_object(fname, self.use_lazy_loading, preload_quantity, extraLogContextInfo="<:compositing.py [{}]:fetch_objects()".format(self.info_str))
         else:
+          self.logger.debug("compositing.py [%s]:fetch_objects(): raveio.open(file = %s)", self.info_str, fname)
           obj = _raveio.open(fname, self.use_lazy_loading, preload_quantity).object #self.quantity
       except IOError:
-        self.logger.exception("Failed to open %s", fname)
+        self.logger.exception("compositing.py [%s]:fetch_objects(): Failed to open file = %s", self.info_str, fname)
       
       is_scan = _polarscan.isPolarScan(obj)
       if is_scan:
@@ -456,7 +517,7 @@ class compositing(object):
         is_pvol = _polarvolume.isPolarVolume(obj)
         
       if not is_scan and not is_pvol:
-        self.logger.warn("Input file %s is neither polar scan or volume, ignoring.", fname)
+        self.logger.warning("compositing.py [%s]:fetch_objects(): Input file %s is neither polar scan or volume, ignoring.", self.info_str, fname)
         continue
       
       # Force azimuthal nav information usage if requested
@@ -465,30 +526,75 @@ class compositing(object):
       if self.ignore_malfunc:
         obj = rave_util.remove_malfunc(obj)
         if obj is None:
-          self.logger.info("Input file %s detected as 'malfunc', ignoring.", fname)
+          self.logger.warning("compositing.py [%s]:fetch_objects(): Input file %s detected as 'malfunc', ignoring.", self.info_str, fname)
           malfunc_files += 1
           continue
       
       node = odim_source.NODfromSource(obj)
-      
-      if len(nodes):
-        nodes += ",'%s'" % node
+
+      if os.getenv('BLT_RAVE_NIMBUS')=='1':
+        # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+        # In NIMBUS we create node-list like this: nodes = "nldhl,nlhrw"
+        if len(nodes):
+          nodes += ",%s" % node
+        else:
+          nodes += "%s" % node
       else:
-        nodes += "'%s'" % node
+        # BALTRAD currently creates something like this: nodes = "\'nldhl\',\'nlhrw\'"
+        # This is UGLY. In NIMBUS we DO NOT use this. 
+        if len(nodes):
+          nodes += ",'%s'" % node
+        else:
+          nodes += "'%s'" % node
         
       objects[fname] = obj
-          
+
+      if os.getenv('BLT_RAVE_NIMBUS')=='1':
+        # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+        # The NIMBUS QC-PVOLs do contain (main-group) 'how/task' ~=  = "nimbus-qc**,ropo,beamb,qi-total,***"
+        # Note the difference between (main-group) 'how/task' and (scan#/dataset#) 'how/task' and (scan#/dataset#/quality#) 'how/task'
+        if is_pvol:
+          if obj.hasAttribute('how/task'):
+            # NOTE: (main-group) 'how/task' of QC-PVOL) at this stage could eventually contain "poluted" content from the various radar-sources
+            # which do have some of their own stuff in "how/task" fields.
+            how_task_string = obj.getAttribute('how/task')
+            try:
+              how_task_list0 = how_task_string.split(',')
+            except:
+              how_task_list0 = []
+            how_task_list = []
+            for extra_qc_item in how_task_list0:
+              if "nimbus-qc" in extra_qc_item:
+                how_task_list.append(extra_qc_item) # keep "nimbus-qc*" in the how_task_list[]
+              p = rave_pgf_quality_registry.get_plugin(extra_qc_item)
+              if p == None:
+                # Remove (do not include) qc-items from "how/task" which are not really registered quality controls of Baltrad)
+                continue
+              else:
+                # Add qc-items from "how/task" ONLY from existing registerd quality controls
+                how_task_list.append(extra_qc_item)
+            for _task in how_task_list:
+              if _task not in self.nimbusQc_tasks_main:
+                self.nimbusQc_tasks_main.append(_task)
+
       if is_scan:
-        self.logger.debug("Scan used in composite generation - UUID: %s, Node: %s, Nominal date and time: %sT%s", fname, node, obj.date, obj.time)
+        self.logger.debug("compositing.py [%s]:fetch_objects(): Scan used in composite generation - UUID=%s, node=%s with dt=%sT%s", self.info_str, fname, node, obj.date, obj.time)
         self.add_how_task_from_scan(obj, tasks)
       elif is_pvol:
-        self.logger.debug("PVOL used in composite generation - UUID: %s, Node: %s, Nominal date and time: %sT%s", fname, node, obj.date, obj.time)
+        self.logger.debug("compositing.py [%s]:fetch_objects(): PVOL used in composite generation - UUID=%s, node=%s with dt=%sT%s", self.info_str, fname, node, obj.date, obj.time)
         for i in range(obj.getNumberOfScans()):
           scan = obj.getScan(i)
           self.add_how_task_from_scan(scan, tasks)
-      
+
     how_tasks = ",".join(tasks)
-    
+
+    if os.getenv('BLT_RAVE_NIMBUS')=='1':
+      # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+      if self.BALTRAD_DEV_TEST_LOGGING:
+        self.logger.debug("compositing.py [{}]:fetch_objects(): From SCANs how_tasks='{}'".format(self.info_str, how_tasks))
+        self.logger.debug("compositing.py [{}]:fetch_objects(): From QC-PVOL   how_tasks={}".format(self.info_str, self.nimbusQc_tasks_main))
+        self.logger.debug("compositing.py [{}]:fetch_objects(): From Qualities how_tasks={}".format(self.info_str, self.nimbusQc_tasks))
+
     all_files_malfunc = (len(self.filenames) > 0 and malfunc_files == len(self.filenames))
     
     return objects, nodes, how_tasks, all_files_malfunc
@@ -498,7 +604,275 @@ class compositing(object):
       how_task_string = scan.getAttribute('how/task')
       if how_task_string not in tasks:
         tasks.append(how_task_string)
-  
+    if os.getenv('BLT_RAVE_NIMBUS')=='1':
+      # Executed only when the NIMBUS RAVE extension is enabled. Regular BALTRAD is NOT affected.
+      self.nimbus_add_how_task_from_scan(scan)
+
+  # NIMBUS NOTES: The original add_how_task_from_scan() will NOT gather 'how/task' from QUALITY groups of the SCANs.
+  # So the tasks list will be mostly EMPTY with exception that source radar sources (in Europe) have there some custom information.
+  #
+  # For all (nimbus-qc) PVOLs in certain compositing-tile BALTRAD performs:
+  # 1) fetch_objects() -> add_how_task_from_scan() -> nimbus_add_how_task_from_scan
+  # 2) quality_control_objects() for NIMBUS this computes NO additional QC-filters 
+  #                              since we explicetely leave "detectors:[]: as EMPTY list!!
+  #    In NIMBUS there are multiple reasons why NOT TO DO QC filtering during compositing stage.
+  #     - One important performance reasons is that BALTRAD would (re-)do any given QC filter (detector) multiple times 
+  #       for (all radars) as there are multiple compositing tiles. 
+  #       It would be complete waste of computing resources and performace killer.
+  # This means that after fetch_objects() we already know which QC-filters have been applied 
+  # on the (all) radar sources withing the current (compositing-) tile.
+  # 3) BALTRAD does the compositing into "result" object
+  #    and stores all participating radar-sources (nodes):
+  #    result.addAttribute('how/nodes', nodes)
+  # 4) store_nimbus_qc_to_composite(result, how_tasks)
+  #    ... NIMBUS is storing the additional information as explained below:
+  #
+  # The NIMBUS QC-PVOLs hdf5-files however do have a GLOBAL attribute 'how/task'
+  # For example
+  # 'how/task' ~~ "nimbus-qc**,ropo,beamb,qi-total,(satfilter)" 
+  # Let's add also 'how/task' from the quality groups attributes...
+  # ['quality#']['how/task'] ~~ "se.smhi.detector.beamblockage" 
+  # This way you know in composite what were the quality filters applied to individual PVOLs/SCANs.
+  #
+  # Mind the difference between "short" QC names and "long" QC names:
+  # short: "ropo"
+  #  => self.nimbusQc_short_tasks_str ==> 'how/task'
+  # long: "fi.fmi.ropo.detector.classification"
+  #  => self.nimbusQc_tasks (list) => self.nimbusQc_tasks_str 
+  #     ==> 'how/task_args'="...;qc_filters:<...>" only when SATFILTER applied "nimbus-qc-no-satfilter"
+  #
+  # Quality group in (Nimbus)QC-PVOLs contains the "long" QC name version 'how/task'
+  #
+  def nimbus_add_how_task_from_scan(self, scan):
+    num_qc = scan.getNumberOfQualityFields()
+    for n in range(num_qc):
+      qfield = scan.getQualityField(n)
+      #quality_attr_names = qfield.getAttributeNames()
+      if qfield.hasAttribute('how/task'):
+        how_task_string = qfield.getAttribute('how/task')
+        if how_task_string not in self.nimbusQc_tasks:
+          self.nimbusQc_tasks.append(how_task_string)
+
+  # Detection of NIMBUS-QC files:
+  # In NIMBUS the QC-VOLUME objects contain attribute ("how/task", "nimbus-qc")
+  # so that we can detect in BALTRAD that given hdf5 (radar) volume files
+  # have been process with Quality-Controls.
+  # Keep in mind that the applied quality controls can vary across radar-sources.
+  # See config: toolbox/nimbus-rave/config/modules_by_radar.xml
+  # How the resulting COMP will be tagged regarding "satfilter" application?
+  # QC-PVOL file from a given radar-source could look like:
+  # (A) ["how/task"] ~="nimbus-qc-satfilter,ropo,beamb,qi-total,satfilter" ;
+  #     .. ALL radar-sources treated with satfilter. 
+  #     "nimbus-qc-satfilter,..":    Explicit apply to ALL during TESTING;
+  # (B) ["how/task"] ~="nimbus-qc-no-satfilter,ropo,beamb,qi-total" ;
+  #     .. NONE radar-sources treated with satfilter. 
+  #     "nimbus-qc-no-satfilter,..": Explicit apply to NONE during TESTING;
+  # (C) ["how/task"] ~="nimbus-qc,ropo,beamb,qi-total,satfilter" ;
+  #     .. only SOME radar-sources treated with satfilter; this source YES
+  # (D) ["how/task"] ~="nimbus-qc,ropo,beamb,qi-total" ;
+  #     .. only SOME radar-sources treated with satfilter: this source NOT
+  #     "nimbus-qc,..": NIMBUS-QC applied as configured used for PRODUCTION runs;
+  # Into COMP file ["how/task"] goes:
+  # QC-PVOL (A) ==> COMP "nimbus-qc-satfilter" 
+  # QC-PVOL (B) ==> COMP "nimbus-qc"
+  # QC-PVOL (C+D) ==> "satfilter" filter is applied only to SOME sources,
+  #                according the configuration; see toolbox/nimbus-rave/config/modules_by_radar.xml
+  #   - If there is at least 1 PVOL (C) with satfilter applied in the composite (COMP),
+  #     then COMP will be tagged: "nimbus-qc-satfilter"
+  #
+  # Example meta-data of COMPOSINTE from NIMBUS QC-PVOL:
+  # (A) satfilter is applied 
+  # group: how {
+  #   :nodes = "detur,demem,deros,nldhl,nlhrw,deboo..."
+  #   :task = "nimbus-qc-satfilter,ropo,beamb,qi-total,satfilter" ;
+  #   :task_args = "satfilter_file:S_NWC_PC_MSG2_Europe-VISIR_20220127T100000Z.nc;
+  #                 satfilter_nodes:detur,demem,deros,nldhl,...;
+  #                 ropo_nodes:detur,demem,deros,nldhl,...;
+  #                 beamb_nodes:detur,demem,deros,nldhl,...;..."
+  # (B) satfilter NOT applied 
+  # group: how {
+  #   :nodes = "detur,demem,deros,nldhl,nlhrw,deboo..."
+  #   :task = "nimbus-qc,ropo,beamb,qi-total" ;
+  #   :task_args = "ropo_nodes:detur,demem,deros,nldhl,...;
+  #                 beamb_nodes:detur,demem,deros,nldhl,...;..."
+  #
+  # TBD: REMOVE   qc_filters  ... outdated
+  '''
+  BALTRAD DEX: Detect FULLY nimbus-qc composites:
+  { "type": "attr", "valueType": "STRING", "negated": true,"operator": "LIKE",
+    "attribute": "how/task", "value": "nimbus-qc-satfilter,*"},
+  { "type": "attr", "valueType": "STRING", "negated": false,"operator": "LIKE",
+    "attribute": "how/task", "value": "nimbus-qc,*"},
+  - or -
+  BALTRAD DEX: Detect nimbus-qc composites (explicitely) WITHOUT satfilter:
+  { "type": "attr", "valueType": "STRING", "negated": false,"operator": "LIKE",
+    "attribute": "how/task", "value": "nimbus-qc-no-satfilter*"},
+  '''
+
+  def eval_nimbus_qc_pvols_in_comp(self, result):
+    # In the logging prints: eval_nimbus_qc() .. stands for .. eval_nimbus_qc_pvols_in_comp()
+    # self.nimbusQc_detected = False # done in constructor 
+    # self.whichNimbus_qc = ""
+    nimbusQc_detected_file = False
+    # self.nimbusQc_dict_qc_nodes = {} # 
+    self.nimbusQc_satfilter_file = ""
+
+    for k in result.keys():
+      obj = result[k]
+      node = odim_source.NODfromSource(obj)
+      node_dt_str="{}T{}".format(obj.date, obj.time)
+      if node_dt_str == self.dt_str:
+        info_str_nod = "dt={},area={},node={}".format(self.dt_str,self.area_id,node)
+      else:
+        # datetime-timestamp of radar PVOL from certain radar node could be slightly different 
+        # then nominal datetime of the composite. 
+        info_str_nod = "dt={},area={},node={} with dt={}".format(self.dt_str,self.area_id,node,node_dt_str)
+      attr_names = obj.getAttributeNames()
+      # During compositing attr_names looks typically like this:
+      # attr_names=['how/task', 'how/wavelength', 'what/version', 'how/scan_count', 'what/object', 'how/software', 'how/system', 'how/TXtype']
+      # obj .. can be a single scan of pvol
+
+      if "how/task" in attr_names:
+        how_task_value = obj.getAttribute("how/task")
+        self.logger.debug('compositing.py [{}]:eval_nimbus_qc(): how_task_value = "{}"'.format(info_str_nod, how_task_value))
+        # how_task_value ~~ "nimbus-qc***,ropo,beamb,qi-total"
+        # - or -
+        # how_task_value ~~ "nimbus-qc***,ropo,beamb,qi-total,satfilter"
+        if not "nimbus-qc" in how_task_value:
+          self.nimbusQc_short_tasks_str = how_task_value
+        else:
+          nimbusQc_detected_file = True
+          self.whichNimbus_qc = "nimbus-qc"
+          try:
+            short_named_qc_list = how_task_value.split(',')[1:]
+          except:
+            short_named_qc_list = []
+          for qc_item in short_named_qc_list:
+            if "nimbus-qc" in qc_item:
+              continue
+            if qc_item not in self.nimbusQc_dict_qc_nodes:
+              self.nimbusQc_dict_qc_nodes[qc_item] = []
+            if node not in self.nimbusQc_dict_qc_nodes[qc_item]:
+              self.nimbusQc_dict_qc_nodes[qc_item].append(node)
+          self.nimbusQc_short_tasks_str = ','.join(short_named_qc_list)
+          if self.BALTRAD_DEV_TEST_LOGGING:
+            self.logger.debug('compositing.py [{}]:eval_nimbus_qc(): nimbusQc_short_tasks = "{}"'.format(info_str_nod, self.nimbusQc_short_tasks_str))
+            self.logger.debug('compositing.py [{}]:eval_nimbus_qc(): nimbusQc_dict_qc_nodes = "{}"'.format(info_str_nod, self.nimbusQc_dict_qc_nodes))
+          # CHECK in "fr.mf.satfilter" has been applied, and set self.nimbusQc_satfilter_file and self.whichNimbus_qc = "nimbus-qc-satfilter"
+          scan_obj = None
+          if _polarvolume.isPolarVolume(obj) or _polarscan.isPolarScan(obj):
+            # Can NOT work directly with obj.findQualityFieldByHowTask("fr.mf.satfilter")
+            # That would cause AttributeError: 'PolarVolumeCore' object has no attribute 'findQualityFieldByHowTask'
+            if _polarvolume.isPolarVolume(obj):
+              for s in range(obj.getNumberOfScans()):
+                scan_obj = obj.getScan(s)
+                # All scans in the same volume have same quality applied. Take just the first scan.
+                break
+            if _polarscan.isPolarScan(obj):
+              scan_obj = obj
+            if scan_obj:
+              quality  = scan_obj.findQualityFieldByHowTask("fr.mf.satfilter")
+              if quality != None:
+                self.whichNimbus_qc = "nimbus-qc-satfilter" # could be later detected
+                quality_attr_names = quality.getAttributeNames()
+                if "how/task_args" in quality_attr_names:
+                  # quality["fr.mf.satfilter"]["how/task_args"] == filename of satellite image used by satfilter
+                  self.nimbusQc_satfilter_file = quality.getAttribute("how/task_args")
+      # still inside of the for loop..
+      if nimbusQc_detected_file:
+        self.nimbusQc_detected = True
+        self.nimbusQc_tasks_str = ','.join(self.nimbusQc_tasks)
+        # TBD: Would be nice to have on the logging-line
+        # NonDaemonPoolWorker-4: ID=91642-525 .. self.name, self._jobid of the actual RavePGF() instance; "%s: ID=%s" % (self.name, self._jobid)
+
+        # Convert DICT self.nimbusQc_dict_qc_nodes to the string nimbusQc_dict_qc_nodes_str like this:
+        # "satfilter_nodes:detur,demem,deros,nldhl,...;
+        #  ropo_nodes:detur,demem,deros,nldhl,...;
+        #  beamb_nodes:detur,demem,deros,nldhl,...;..."
+        nimbusQc_dict_qc_nodes_keys0 = list(self.nimbusQc_dict_qc_nodes.keys())
+        if "satfilter" in nimbusQc_dict_qc_nodes_keys0:
+          # make sure that satfilter nodes go 1st
+          nimbusQc_dict_qc_nodes_keys = []
+          nimbusQc_dict_qc_nodes_keys.append("satfilter")
+          nimbusQc_dict_qc_nodes_keys0.remove("satfilter")
+          nimbusQc_dict_qc_nodes_keys += nimbusQc_dict_qc_nodes_keys0
+        else:
+          nimbusQc_dict_qc_nodes_keys = nimbusQc_dict_qc_nodes_keys0
+        self.nimbusQc_dict_qc_nodes_str = ""
+        for qc_item in nimbusQc_dict_qc_nodes_keys:
+          qc_nodes_list = self.nimbusQc_dict_qc_nodes[qc_item]
+          qc_nodes_str = "{}_nodes:{};".format(qc_item, ','.join(qc_nodes_list))
+          self.nimbusQc_dict_qc_nodes_str += qc_nodes_str
+        if self.BALTRAD_DEV_TEST_LOGGING:
+          if self.whichNimbus_qc == "nimbus-qc-satfilter":
+            self.logger.debug('compositing.py [{}]:eval_nimbus_qc(): Detected NIMBUS-QC file: whichNimbus_qc="{}"; nimbusQc_satfilter_file="{}"; nimbusQc_dict_qc_nodes_str="{}";'.format(\
+                          info_str_nod,\
+                          self.whichNimbus_qc, self.nimbusQc_satfilter_file,\
+                          self.nimbusQc_dict_qc_nodes_str)) # unused self.nimbusQc_tasks_str
+          else:
+            self.logger.debug('compositing.py [{}]:eval_nimbus_qc(): Detected NIMBUS-QC file: whichNimbus_qc="{}"; nimbusQc_dict_qc_nodes_str="{}";'.format(\
+                          info_str_nod,\
+                          self.whichNimbus_qc,\
+                          self.nimbusQc_dict_qc_nodes_str))
+      else:
+          if self.BALTRAD_DEV_TEST_LOGGING:
+            self.logger.debug('compositing.py [{}]:eval_nimbus_qc(): NOT detected NIMBUS-QC file'.format(info_str_nod))
+
+  def store_nimbus_qc_to_composite(self, result, how_tasks):
+    # result .. composite object
+    # Logging prints contain "store_nimbus_qc()" .. in place of .. store_nimbus_qc_to_composite()
+    
+    if not self.nimbusQc_detected:
+      return
+    nimbusQc_short_tasks_str = self.nimbusQc_short_tasks_str[:]
+    try:
+      # how_tasks .. string
+      how_task_list0 = how_tasks.split(',')
+    except:
+      how_task_list0 = []
+    # NOTE: how_task_list0 .. at this stage it may contain "poluted" content from the various radar-sources
+    # which do have some of their own stuff in "how/task" fields.
+    how_task_list = []
+    for extra_qc_item in how_task_list0:
+      p = rave_pgf_quality_registry.get_plugin(extra_qc_item)
+      if p == None:
+        # Remove (do not include) qc-items from "how/task" which are not really registered quality controls of Baltrad)
+        continue
+      else:
+        # Add qc-items from "how/task" ONLY from existing registerd quality controls
+        how_task_list.append(extra_qc_item)
+
+    how_task_list += self.nimbusQc_tasks_main
+    for extra_qc_item in how_task_list:
+      if ('nimbus-qc' not in extra_qc_item) and (extra_qc_item not in nimbusQc_short_tasks_str):
+        if nimbusQc_short_tasks_str != "":
+          nimbusQc_short_tasks_str +=","
+        nimbusQc_short_tasks_str +="{}".format(extra_qc_item)
+
+    if self.BALTRAD_DEV_TEST_LOGGING:
+      self.logger.debug("compositing.py [{}]:store_nimbus_qc(): Detected NIMBUS_QC files used for this composite; whichNimbus_qc='{}'; nimbusQc_short_tasks='{}';".format(\
+                        self.info_str, self.whichNimbus_qc, nimbusQc_short_tasks_str))
+    # "nimbus-qc" -or- "nimbus-qc-no-satfilter"
+    how_tasks_value = "{},{}".format(self.whichNimbus_qc, nimbusQc_short_tasks_str[:])
+
+    
+
+    if self.nimbusQc_satfilter_file !="":
+      how_task_args_value = "satfilter_file:{};{}".format(self.nimbusQc_satfilter_file, self.nimbusQc_dict_qc_nodes_str)
+    else:
+      how_task_args_value = "{}".format(self.nimbusQc_dict_qc_nodes_str)
+    if how_task_args_value != "":
+      result.addAttribute('how/task_args', how_task_args_value)
+      self.logger.debug("compositing.py [{}]:store_nimbus_qc(): addAttribute('how/task_args', '{}')".format(self.info_str, how_task_args_value))
+    else:
+      self.logger.debug("compositing.py [{}]:store_nimbus_qc(): how_task_args_value == ''".format(self.info_str))
+
+    if how_tasks_value != "":
+      result.addAttribute('how/task', how_tasks_value)
+      self.logger.debug("compositing.py [{}]:store_nimbus_qc(): addAttribute('how/task', '{}')".format(self.info_str, how_tasks_value))
+    else:
+      self.logger.debug("compositing.py [{}]:store_nimbus_qc(): how_tasks_value == ''".format(self.info_str))
+
   def create_filename(self, pobj):
     #_polarscan.isPolarScan(obj) and not _polarvolume.isPolarVolume(obj):
     if _polarvolume.isPolarVolume(pobj):
@@ -737,6 +1111,8 @@ def main(options):
   
   if comp.verbose:
     logger.info("Saving %s"%rio.filename)
+
+  logger.info("compositing.py: Saving new composite: " + rio.filename)
   rio.save()
 
 if __name__ == "__main__":
